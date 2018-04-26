@@ -46,7 +46,30 @@ exports.likeMessage = function(req, res, next){
   })
   .catch(err => res.json(err));
 }
+const combineData = (users, currentUser) => {
+  let finalData = users.map(function(obj){
+      mappedFollowing = obj.followers.some(e => e.toString() === currentUser.userId);
+      let finalObject = {
+        username: obj.username,
+        profileImgUrl: obj.profileImgUrl,
+        following: mappedFollowing,
+        profileColor: obj.profileColor,
+        displayName: obj.displayName
+      }
+    return finalObject;
+  });
+  return finalData;
+}
 
+exports.getMessageLikes = function(req, res, next){
+  var currentUser = jwt.decode(req.headers.authorization.split(" ")[1]);
+  db.Message.findById(req.params.mid)
+  .populate("likedBy", {username: true, profileImgUrl: true, followers: true, profileColor: true})
+  .then(function(messages){
+    let newData = combineData(messages.likedBy, currentUser)
+    res.json(newData);
+  })
+}
 exports.getGetAllMessages = function(req, res, next){
   var currentUser = jwt.decode(req.headers.authorization.split(" ")[1]);
   db.Message.find().sort({createdAt: "desc"})

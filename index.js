@@ -27,6 +27,7 @@ app.use("/api/user", auth.loginRequired, userInfoRoutes);
 app.post("/api/:username/follow", helpers.followUser);
 app.use("/api/messages/:mid/like", helpers.likeMessage);
 app.get("/api/messages", helpers.getGetAllMessages);
+app.get("/api/message/:mid/likes", helpers.getMessageLikes);
 const PORT = 8081;
 app.listen(PORT, function(){
   console.log(`Server is listening on port ${PORT}`);
