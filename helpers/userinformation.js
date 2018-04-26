@@ -2,8 +2,14 @@ var db = require("../models"),
     jwt = require("jsonwebtoken");
 exports.getUserMessages = function(req, res){
   var currentUser = jwt.decode(req.headers.authorization.split(" ")[1]);
+
+  var perPage = 10;
+  var page = req.query["page"] > 0 ? req.query["page"] : 0
   db.User.findOne({username: req.params.id}).then(function(user){
-    db.Message.find({userId: user._id}).sort({createdAt: "desc"})
+    db.Message.find({userId: user._id, isDeleted: false})
+    .limit(perPage)
+    .skip(perPage * page)
+    .sort({createdAt: "desc"})
     .populate("userId", {username: true, profileImgUrl: true, profileColor: true, displayName: true})
     .then(function(messages){
       messages = messages.filter(message => message.isDeleted === false);

@@ -72,10 +72,14 @@ exports.getMessageLikes = function(req, res, next){
 }
 exports.getGetAllMessages = function(req, res, next){
   var currentUser = jwt.decode(req.headers.authorization.split(" ")[1]);
-  db.Message.find().sort({createdAt: "desc"})
+  var perPage = 10;
+  var page = req.query["page"] > 0 ? req.query["page"] : 0
+  db.Message.find({isDeleted: false})
+  .limit(perPage)
+  .skip(perPage * page)
+  .sort({createdAt: "desc"})
     .populate("userId", {username: true, profileImgUrl: true, profileColor: true, displayName: true})
     .then(function(messages){
-      messages = messages.filter(message => message.isDeleted === false);
       let newData = messages.map(function(obj){
         mappedLiked = obj.likedBy.some(e => e.toString() === currentUser.userId)
         let finalData = {
