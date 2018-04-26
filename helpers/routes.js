@@ -1,5 +1,6 @@
 var db = require("../models"),
     jwt = require("jsonwebtoken");
+var ObjectId = require('mongodb').ObjectID
 
 
 exports.followUser = function(req, res, next){
@@ -70,14 +71,20 @@ exports.getMessageLikes = function(req, res, next){
     res.json(newData);
   })
 }
-exports.getGetAllMessages = function(req, res, next){
+
+
+exports.getGetAllMessages = function(req, res){
   var currentUser = jwt.decode(req.headers.authorization.split(" ")[1]);
   var perPage = 10;
-  var page = req.query["page"] > 0 ? req.query["page"] : 0
-  db.Message.find({isDeleted: false})
-  .limit(perPage)
-  .skip(perPage * page)
-  .sort({createdAt: "desc"})
+  var pageId = req.query["from"]
+  db.User.find({followers: currentUser.userId}).then(users => {
+    const ids = users.map(obj => {return {_id: obj._id}})
+    ids.push({_id: currentUser.userId})
+      const dbQuerySelector = !pageId ? db.Message.find({"userId":{"$in": ids}, isDeleted: false}).limit(perPage)
+                          :
+                          db.Message.find({"userId":{"$in": ids}, '_id': {'$lt':pageId}, isDeleted: false}).limit(perPage)
+      dbQuerySelector
+     .sort({createdAt: "desc"})
     .populate("userId", {username: true, profileImgUrl: true, profileColor: true, displayName: true})
     .then(function(messages){
       let newData = messages.map(function(obj){
@@ -94,5 +101,44 @@ exports.getGetAllMessages = function(req, res, next){
     .catch(function(err){
       res.status(500).json({message: "There was a problem finding the messages, please try again later", code: 500});
     });
-};
+    })
+
+}
+
+
+/*
+
+The following code is remainder from getting every latest message, It's possible to be used but currently I have decided to remove it for sake of UX and customising their dashboard
+
+*/
+
+
+
+// exports.getGetAllMessages = function(req, res, next){
+//   var currentUser = jwt.decode(req.headers.authorization.split(" ")[1]);
+//   console.log(currentUser)
+//   var perPage = 10;
+//   var pageId = req.query["from"]
+//   const dbQuerySelector = !pageId ? db.Message.find({isDeleted: false}).limit(perPage)
+//                       :
+//                       db.Message.find({'_id': {'$lt':pageId}, isDeleted: false}).limit(perPage)
+//   dbQuerySelector
+//   .sort({createdAt: "desc"})
+//     .populate("userId", {username: true, profileImgUrl: true, profileColor: true, displayName: true})
+//     .then(function(messages){
+//       let newData = messages.map(function(obj){
+//         mappedLiked = obj.likedBy.some(e => e.toString() === currentUser.userId)
+//         let finalData = {
+//           ...obj._doc,
+//           isLiked: mappedLiked,
+//           likedBy: obj.likedBy.length
+//         }
+//         return finalData;
+//       })
+//       res.json(newData);
+//     })
+//     .catch(function(err){
+//       res.status(500).json({message: "There was a problem finding the messages, please try again later", code: 500});
+//     });
+// };
 module.exports = exports;

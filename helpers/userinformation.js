@@ -3,12 +3,14 @@ var db = require("../models"),
 exports.getUserMessages = function(req, res){
   var currentUser = jwt.decode(req.headers.authorization.split(" ")[1]);
 
-  var perPage = 10;
-  var page = req.query["page"] > 0 ? req.query["page"] : 0
   db.User.findOne({username: req.params.id}).then(function(user){
-    db.Message.find({userId: user._id, isDeleted: false})
-    .limit(perPage)
-    .skip(perPage * page)
+    var perPage = 10;
+    var pageId = req.query["from"]
+    const dbQuerySelector = !pageId ? db.Message.find({userId: user._id, isDeleted: false}).limit(perPage)
+    :
+    db.Message.find({userId: user._id, '_id': {'$lt':pageId}, isDeleted: false}).limit(perPage)
+
+    dbQuerySelector //This var checks if there is a query "from" in the request, if it is present it will find the appropriate data
     .sort({createdAt: "desc"})
     .populate("userId", {username: true, profileImgUrl: true, profileColor: true, displayName: true})
     .then(function(messages){
