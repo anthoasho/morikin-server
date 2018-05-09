@@ -2,21 +2,25 @@ var db = require("../models"),
     jwt = require("jsonwebtoken");
 exports.getUserMessages = function(req, res){
   var currentUser = jwt.decode(req.headers.authorization.split(" ")[1]);
-
   db.User.findOne({username: req.params.id}).then(function(user){
     var perPage = 10;
     var pageId = req.query["from"]
-    const dbQuerySelector = !pageId ? db.Message.find({userId: user._id, isDeleted: false}).limit(perPage)
-    :
-    db.Message.find({userId: user._id, '_id': {'$lt':pageId}, isDeleted: false}).limit(perPage)
+    const dbQuerySelector =
+      !pageId ? db.Message.find({userId: user._id, isDeleted: false}).limit(perPage)
+      :
+      db.Message.find({
+        userId: user._id,
+        '_id': {'$lt':pageId},
+         isDeleted: false})
+      .limit(perPage)
 
     dbQuerySelector //This var checks if there is a query "from" in the request, if it is present it will find the appropriate data
     .sort({createdAt: "desc"})
     .populate("userId", {username: true, profileImgUrl: true, profileColor: true, displayName: true})
     .then(function(messages){
       messages = messages.filter(message => message.isDeleted === false);
-      let newData = messages.map(function(obj){
-        mappedLiked = obj.likedBy.some(e => e.toString() === currentUser.userId)
+      let mappedData = messages.map(function(obj){
+        mappedLiked = obj.likedBy.some(e => e.toString() === currentUser.userId) //Returns a true if the message has been liked by the user
         let finalData = {
           ...obj._doc,
           isLiked: mappedLiked,
@@ -24,7 +28,7 @@ exports.getUserMessages = function(req, res){
         }
         return finalData;
       })
-      res.json(newData);
+      res.json(mappedData);
     })
     .catch(function(err){
      if(err.reason === undefined){
@@ -33,6 +37,7 @@ exports.getUserMessages = function(req, res){
     });
   });
 };
+
 const combineData = (users, currentUser) => {
   let finalData = users.map(function(obj){
       mappedFollowing = obj.followers.some(e => e.toString() === currentUser.userId);

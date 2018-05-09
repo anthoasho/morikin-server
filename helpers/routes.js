@@ -73,14 +73,37 @@ exports.getMessageLikes = function(req, res, next){
 }
 
 
+exports.getDiscoverUsers = function(req, res){
+    var currentUser = jwt.decode(req.headers.authorization.split(" ")[1]);
+    // var currentUser = {userId:  "5ac3c09d11a63b0740bed3ce"}
+    db.User.find({followers: currentUser.userId})
+    .then(user => {
+     const ids = user.map(obj => {return {_id: obj._id}})
+     //The following finds users who are not followed by current, but are followed by current's followers
+     Promise.all([
+       db.User.find({followers: {"$nin": [currentUser.userId], "$in": ids }, _id: {"$nin": [currentUser.userId]}}, "username profileImgUrl profileColor"),
+       db.User.find({followers: {"$nin": ids.concat(currentUser.userId)}, _id: {"$nin": [currentUser.userId]}})
+     ]).then( ([followList, restList]) =>{
+       console.log(followList, "HIIIIIII")
+       var test = followList.concat(restList)
+       test.splice(6);
+       res.json(test);
+     })
+      // db.User.find({followers: {"$nin": [currentUser.userId], "$in": ids }, _id: {"$nin": [currentUser.userId]}}, "username profileImgUrl profileColor")
+      //   .then(users => {
+      //     res.json(users)
+      //   })
+    })
+}
+
 exports.getGetAllMessages = function(req, res){
   var currentUser = jwt.decode(req.headers.authorization.split(" ")[1]);
   var perPage = 10;
   var pageId = req.query["from"]
   db.User.find({followers: currentUser.userId})
   .then(users => {
-    const ids = users.map(obj => {return {_id: obj._id}})
-    ids.push({_id: currentUser.userId})
+    const ids = users.map(obj => {return {_id: obj._id}}) //Just gives id of the users that current follows
+    ids.push({_id: currentUser.userId}) //adds the current User to the list
       const dbQuerySelector = !pageId ? db.Message.find({"userId":{"$in": ids}, isDeleted: false}).limit(perPage)
                           :
                           db.Message.find({"userId":{"$in": ids}, '_id': {'$lt':pageId}, isDeleted: false}).limit(perPage)
