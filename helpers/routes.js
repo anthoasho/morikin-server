@@ -77,7 +77,8 @@ exports.getGetAllMessages = function(req, res){
   var currentUser = jwt.decode(req.headers.authorization.split(" ")[1]);
   var perPage = 10;
   var pageId = req.query["from"]
-  db.User.find({followers: currentUser.userId}).then(users => {
+  db.User.find({followers: currentUser.userId})
+  .then(users => {
     const ids = users.map(obj => {return {_id: obj._id}})
     ids.push({_id: currentUser.userId})
       const dbQuerySelector = !pageId ? db.Message.find({"userId":{"$in": ids}, isDeleted: false}).limit(perPage)
@@ -102,6 +103,9 @@ exports.getGetAllMessages = function(req, res){
       res.status(500).json({message: "There was a problem finding the messages, please try again later", code: 500});
     });
     })
+    .catch(function(err){
+      res.status(500).json({message: "There was a problem finding the messages, please try again later", code: 500});
+    });
 
 }
 
