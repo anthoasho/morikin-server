@@ -1,6 +1,6 @@
 var db = require("../models"),
-    jwt = require("jsonwebtoken");
-var ObjectId = require('mongodb').ObjectID
+    jwt = require("jsonwebtoken"),
+    error = require("./errorHandler");
 
 
 exports.followUser = function(req, res, next){
@@ -13,16 +13,16 @@ exports.followUser = function(req, res, next){
       user.save().then(function(user){
         res.json({following: true, followerCount: user.followers.length, username:user.username});
       })
-      .catch(res => res.status(500).json({message: "We couldn't save your data right now, please try again later", code: 500})); //this is literally disgusting...
+      .catch(res => res.status(500).json(error.errorHandler("saveError", 500))); //this is literally disgusting...
     }else{
       user.followers.splice(index, 1);
       user.save().then(function(user){
         res.json({following: false, followerCount: user.followers.length, username:user.username});
       })
-      .catch(res => res.status(500).json({message: "We couldn't save your data right now, please try again later", code: 500}));
+      .catch(res => res.status(500).json(error.errorHandler("saveError", 500)));
     }
   })
-  .catch(res => res.status(500).json({message: "We couldn't find that user! Please try again later", code: 404}));
+  .catch(res => res.status(500).json(error.errorHandler(404)));
 };
 
 exports.likeMessage = function(req, res, next){
@@ -45,8 +45,9 @@ exports.likeMessage = function(req, res, next){
 
     }
   })
-  .catch(err => res.json(err));
+  .catch(err => res.status(500).json(error.errorHandler()));
 }
+
 const combineData = (users, currentUser) => {
   let finalData = users.map(function(obj){
       mappedFollowing = obj.followers.some(e => e.toString() === currentUser.userId);
@@ -70,6 +71,9 @@ exports.getMessageLikes = function(req, res, next){
     let newData = combineData(messages.likedBy, currentUser)
     res.json(newData);
   })
+  .catch(() => {
+    res.status(500).json(error.errorHandler());
+  })
 }
 
 
@@ -80,54 +84,61 @@ exports.getDiscoverUsers = function(req, res){
     .then(user => {
      const ids = user.map(obj => {return {_id: obj._id}})
      //The following finds users who are not followed by current, but are followed by current's followers
+     //Also temporary solution, perhaps aggregation is a more suitable method - learn that
      Promise.all([
        db.User.find({followers: {"$nin": [currentUser.userId], "$in": ids }, _id: {"$nin": [currentUser.userId]}}, "username profileImgUrl profileColor"),
        db.User.find({followers: {"$nin": ids.concat(currentUser.userId)}, _id: {"$nin": [currentUser.userId]}})
      ]).then( ([followList, restList]) =>{
-       console.log(followList, "HIIIIIII")
-       var test = followList.concat(restList)
-       test.splice(6);
-       res.json(test);
+       var combineDiscover = followList.concat(restList)
+       combineDiscover.splice(6);
+       res.json(combineDiscover);
      })
-      // db.User.find({followers: {"$nin": [currentUser.userId], "$in": ids }, _id: {"$nin": [currentUser.userId]}}, "username profileImgUrl profileColor")
-      //   .then(users => {
-      //     res.json(users)
-      //   })
+     .catch( () => {
+       res.status(500).json(error.errorHandler());
+     })
+    })
+    .catch(() => {
+      res.status(404).json(error.errorHandler(404));
     })
 }
 
 exports.getGetAllMessages = function(req, res){
   var currentUser = jwt.decode(req.headers.authorization.split(" ")[1]);
   var perPage = 10;
-  var pageId = req.query["from"]
+  var pageId = req.query["from"];
   db.User.find({followers: currentUser.userId})
   .then(users => {
     const ids = users.map(obj => {return {_id: obj._id}}) //Just gives id of the users that current follows
     ids.push({_id: currentUser.userId}) //adds the current User to the list
-      const dbQuerySelector = !pageId ? db.Message.find({"userId":{"$in": ids}, isDeleted: false}).limit(perPage)
+      const dbQuerySelector = !pageId ? db.Message.find({"userId":{"$in": ids}, isDeleted: false})
                           :
-                          db.Message.find({"userId":{"$in": ids}, '_id': {'$lt':pageId}, isDeleted: false}).limit(perPage)
+                          db.Message.find({"userId":{"$in": ids}, '_id': {'$lt':pageId}, isDeleted: false})
       dbQuerySelector
-     .sort({createdAt: "desc"})
+      .limit(perPage)
+      .sort({createdAt: "desc"})
     .populate("userId", {username: true, profileImgUrl: true, profileColor: true, displayName: true})
     .then(function(messages){
-      let newData = messages.map(function(obj){
-        mappedLiked = obj.likedBy.some(e => e.toString() === currentUser.userId)
-        let finalData = {
-          ...obj._doc,
-          isLiked: mappedLiked,
-          likedBy: obj.likedBy.length
-        }
-        return finalData;
-      })
-      res.json(newData);
+        db.Message.find({"userId":{"$in":ids}, isDeleted:false}).sort({createdAt: 1}).limit(1).then(last => {
+          let newData = messages.map(function(obj){
+            mappedLiked = obj.likedBy.some(e => e.toString() === currentUser.userId)
+            let finalData = {
+              ...obj._doc,
+              isLiked: mappedLiked,
+              likedBy: obj.likedBy.length,
+              isLast: obj._id.toString() === last[0]._id.toString() //Figure out something to do with this isLast - how to handle it
+            }
+            return finalData;
+          })
+          res.json(newData);
+
+        })
     })
     .catch(function(err){
-      res.status(500).json({message: "There was a problem finding the messages, please try again later", code: 500});
+        res.status(404).json(error.errorHandler("messageNoFind", 404));
     });
     })
     .catch(function(err){
-      res.status(500).json({message: "There was a problem finding the messages, please try again later", code: 500});
+    res.status(500).json(error.errorHandler("messageNoFind", 500));
     });
 
 }

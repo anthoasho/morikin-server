@@ -1,5 +1,6 @@
 var db = require("../models"),
-    jwt = require("jsonwebtoken");
+    jwt = require("jsonwebtoken"),
+    error = require("./errorHandler");
 
 exports.createMessage = function(req, res, next){
   const newMessage = {
@@ -19,7 +20,7 @@ exports.createMessage = function(req, res, next){
     }).catch(next);
   }).catch(next);
   }else{
-    return res.status(400).json({message: "Too many characters!", code: 400});
+    return res.status(400).json(error.errorHandler("messageOverload", 400));
   }
 };
 

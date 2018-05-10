@@ -1,5 +1,6 @@
 var db = require("../models"),
-    jwt = require("jsonwebtoken");
+    jwt = require("jsonwebtoken"),
+        error = require("./errorHandler");
 exports.getUserMessages = function(req, res){
   var currentUser = jwt.decode(req.headers.authorization.split(" ")[1]);
   db.User.findOne({username: req.params.id}).then(function(user){
@@ -18,7 +19,6 @@ exports.getUserMessages = function(req, res){
     .sort({createdAt: "desc"})
     .populate("userId", {username: true, profileImgUrl: true, profileColor: true, displayName: true})
     .then(function(messages){
-      messages = messages.filter(message => message.isDeleted === false);
       let mappedData = messages.map(function(obj){
         mappedLiked = obj.likedBy.some(e => e.toString() === currentUser.userId) //Returns a true if the message has been liked by the user
         let finalData = {
@@ -32,8 +32,9 @@ exports.getUserMessages = function(req, res){
     })
     .catch(function(err){
      if(err.reason === undefined){
-      res.status(404).json({code: 404, message: "Sorry this user does not exist!"});
-    } res.json(err);
+      res.status(404).json(error.errorHandler(404));
+    }
+    res.json(error.errorHandler("messageNoFind", 500));
     });
   });
 };
@@ -64,7 +65,7 @@ exports.getUserFollow = function(req, res, next){
       res.json(newData);
     })
     .catch(err => res.status(500).json(err));
-  }else if(req.params.follow === "following"){
+  }else if(req.params.follow === "following"){ // change this to a query
     db.User.findOne({username: req.params.user})
     .then(profile => {
       db.User.find({followers: profile._id})
@@ -74,7 +75,7 @@ exports.getUserFollow = function(req, res, next){
       }).catch(err => res.status(500).json(err));
     }).catch(err => res.status(500).json(err));
   }else{
-    res.status(404).json({message: "Sorry can't be found"})
+    res.status(404).json(error.errorHandler("404"))
   }
 };
 
@@ -102,9 +103,9 @@ exports.updateProfile = function(req, res, next){
         res.status(200)
           .json({response, token});
       })
-      .catch(err => res.json(err))
+      .catch(err => res.status(500).json(error.errorHandler("saveError", 500)))
     })
-    .catch(err=> res.json(err))
+    .catch(err=>  res.status(500).json(error.errorHandler("saveError", 500)))
 };
 exports.getUserProfile = function(req, res){
   db.User.findOne({username: req.params.id})
@@ -132,7 +133,7 @@ exports.getUserProfile = function(req, res){
   })
   .catch(function(err){
     if(err.reason === undefined){
-      res.status(404).json({code: 404, message: "Sorry this user does not exist!"});
+      res.status(404).json(error.errorHandler(404));
     }
       res.json(err)
   });
