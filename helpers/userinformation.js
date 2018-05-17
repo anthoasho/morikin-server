@@ -19,16 +19,19 @@ exports.getUserMessages = function(req, res){
     .sort({createdAt: "desc"})
     .populate("userId", {username: true, profileImgUrl: true, profileColor: true, displayName: true})
     .then(function(messages){
+               db.Message.find({userId: user._id, isDeleted: false}).sort({createdAt: 1}).limit(1).then(last => {
       let mappedData = messages.map(function(obj){
         mappedLiked = obj.likedBy.some(e => e.toString() === currentUser.userId) //Returns a true if the message has been liked by the user
         let finalData = {
           ...obj._doc,
           isLiked: mappedLiked,
-          likedBy: obj.likedBy.length
+          likedBy: obj.likedBy.length,
+          isLast: obj._id.toString() === last[0]._id.toString() //Figure out something to do with this isLast - how to handle it
         }
         return finalData;
       })
       res.json(mappedData);
+    })
     })
     .catch(function(err){
      if(err.reason === undefined){
