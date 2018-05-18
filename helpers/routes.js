@@ -42,25 +42,9 @@ exports.likeMessage = function(req, res, next){
         response = {...response._doc, isLiked: false, likedBy: response.likedBy.length}
         res.status(200).json(response);
       })
-
     }
   })
   .catch(err => res.status(500).json(error.errorHandler()));
-}
-
-const combineData = (users, currentUser) => {
-  let finalData = users.map(function(obj){
-      mappedFollowing = obj.followers.some(e => e.toString() === currentUser.userId);
-      let finalObject = {
-        username: obj.username,
-        profileImgUrl: obj.profileImgUrl,
-        following: mappedFollowing,
-        profileColor: obj.profileColor,
-        displayName: obj.displayName
-      }
-    return finalObject;
-  });
-  return finalData;
 }
 
 exports.getMessageLikes = function(req, res, next){
@@ -77,21 +61,23 @@ exports.getMessageLikes = function(req, res, next){
 }
 
 
+
+
 exports.getDiscoverUsers = function(req, res){
     var currentUser = jwt.decode(req.headers.authorization.split(" ")[1]);
-    // var currentUser = {userId:  "5ac3c09d11a63b0740bed3ce"}
     db.User.find({followers: currentUser.userId})
     .then(user => {
      const ids = user.map(obj => {return {_id: obj._id}})
      //The following finds users who are not followed by current, but are followed by current's followers
      //Also temporary solution, perhaps aggregation is a more suitable method - learn that
      Promise.all([
-       db.User.find({followers: {"$nin": [currentUser.userId], "$in": ids }, _id: {"$nin": [currentUser.userId]}}, "username profileImgUrl profileColor"),
-       db.User.find({followers: {"$nin": ids.concat(currentUser.userId)}, _id: {"$nin": [currentUser.userId]}})
+       db.User.find({followers: {"$nin": [currentUser.userId], "$in": ids }, _id: {"$nin": [currentUser.userId]}}, "username profileImgUrl profileColor").limit(10), // Current User's followers followlists.
+       db.User.find({followers: {"$nin": ids.concat(currentUser.userId)}, _id: {"$nin": [currentUser.userId]}}).limit(10) //Finds remaining followers - SMALL SCALE ONLY
      ]).then( ([followList, restList]) =>{
        var combineDiscover = followList.concat(restList)
-       combineDiscover.splice(6);
-       res.json(combineDiscover);
+       combineDiscover =  dataShuffle(combineDiscover);
+       combineDiscover.splice(3); //current method of limiting the amount of recieved
+       res.json(combineDiscover)
      })
      .catch( () => {
        res.status(500).json(error.errorHandler());
@@ -142,6 +128,45 @@ exports.getGetAllMessages = function(req, res){
     });
 
 }
+
+/*
+
+EXTRA FUNCTIONS
+TODO: Separate into own file
+*/
+
+
+const combineData = (users, currentUser) => {
+  let finalData = users.map(function(obj){
+      mappedFollowing = obj.followers.some(e => e.toString() === currentUser.userId);
+      let finalObject = {
+        username: obj.username,
+        profileImgUrl: obj.profileImgUrl,
+        following: mappedFollowing,
+        profileColor: obj.profileColor,
+        displayName: obj.displayName
+      }
+    return finalObject;
+  });
+  return finalData;
+}
+
+function dataShuffle(array){
+  let lastNum = array.length;
+  let i;
+  let swapper;
+  while(lastNum){
+    i = Math.floor(Math.random() * lastNum-- );
+    swapper = array[lastNum];
+    array[lastNum] = array[i];
+    array[i] = swapper
+  }
+  return array
+}
+
+
+
+
 
 
 /*
