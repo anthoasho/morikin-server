@@ -13,7 +13,7 @@ exports.createMessage = function(req, res, next){
       user.messages.push(message.id);
       user.save().then(function(user){
         return db.Message.findById(message._id)
-          .populate("userId", {username: true, profileImgUrl: true, profileColor: true, displayName: true});
+          .populate("userId", {username: true, profileImgUrl: true, profileColor: true, displayName: true}); //Have this also return the number of likes
       }).then(function(m){
         return res.status(200).json(m);
       }).catch(next);
