@@ -44,7 +44,7 @@ exports.signin = function(req, res){
 };
 
 exports.signup = function(req, res, next){
-    if(!req.body.username || !req.body.email){
+    if(!req.body.username){
     res.status(400).json(error.errorHandler("emptyInput", 400));
       // res.status(400).json({errors:{message: "Please input the required fields!"}});
     }
