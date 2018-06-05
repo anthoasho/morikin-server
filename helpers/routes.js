@@ -76,7 +76,7 @@ exports.getDiscoverUsers = function(req, res){
      ]).then( ([followList, restList]) =>{
        var combineDiscover = followList.concat(restList)
        combineDiscover =  dataShuffle(combineDiscover);
-       combineDiscover.splice(3); //current method of limiting the amount of recieved
+       combineDiscover.splice(10); //current method of limiting the amount of recieved
        res.json(combineDiscover)
      })
      .catch( () => {

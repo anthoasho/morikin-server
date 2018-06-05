@@ -1,6 +1,6 @@
 {
-  "name": "kinkon",
-  "version": "1.0.0",
+  "name": "Morikin",
+  "version": "0.2",
   "description": "A simple twitter clone",
   "main": "index.js",
   "scripts": {
