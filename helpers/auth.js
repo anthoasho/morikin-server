@@ -38,7 +38,6 @@ exports.signin = function(req, res){
       }
     });
   }).catch(function(err){
-    console.log(err)
     res.status(err.code).json(err);
   });
 };
@@ -46,7 +45,6 @@ exports.signin = function(req, res){
 exports.signup = function(req, res, next){
     if(!req.body.username){
     res.status(400).json(error.errorHandler("emptyInput", 400));
-      // res.status(400).json({errors:{message: "Please input the required fields!"}});
     }
   db.User.create(req.body).then(function(user){
     var token = jwt.sign({userId: user.id, username: user.username, email:user.email, profileImgUrl: user.profileImgUrl}, process.env.SECRET_KEY);

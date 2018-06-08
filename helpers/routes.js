@@ -2,7 +2,6 @@ var db = require("../models"),
     jwt = require("jsonwebtoken"),
     error = require("./errorHandler");
 
-
 exports.followUser = function(req, res, next){
   var currentUser = jwt.decode(req.headers.authorization.split(" ")[1]);
   db.User.findOne({username: req.params.username})
@@ -60,9 +59,6 @@ exports.getMessageLikes = function(req, res, next){
   })
 }
 
-
-
-
 exports.getDiscoverUsers = function(req, res){
     var currentUser = jwt.decode(req.headers.authorization.split(" ")[1]);
     db.User.find({followers: currentUser.userId})
@@ -116,7 +112,6 @@ exports.getGetAllMessages = function(req, res){
             return finalData;
           })
           res.json(newData);
-
         })
     })
     .catch(function(err){
