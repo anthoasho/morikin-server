@@ -1,5 +1,5 @@
 var mongoose = require("mongoose");
-
+var dburl = process.env.MONGODB_URI || "mongodb://localhost/morikin";
 mongoose.set("debug", true);
 mongoose.Promise = global.Promise;
 mongoose.connect("mongodb://localhost/morikin", {
