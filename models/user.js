@@ -5,7 +5,13 @@ var userSchema = new mongoose.Schema({
   email:{
     type: String,
     required: false,
-    unique: true
+    trim: true,
+    index: {
+      unique: true,
+      partialFilterExpression: {
+        email: {$type: "string"}
+      }
+    }
   },
   username:{
     type: String,
@@ -39,7 +45,6 @@ var userSchema = new mongoose.Schema({
     ref: "Message"
   }]
 });
-//Putting a follow count, should I do a following or followers, or both?
 
 userSchema.pre('save', function(next){
   var user = this;

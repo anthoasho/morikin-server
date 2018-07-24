@@ -55,6 +55,7 @@ exports.signup = function(req, res, next){
                             });
   }).catch(function(err){
     if (err.code === 11000) {
+      console.log(err)
       res.status(400).json(error.errorHandler("userConflict", 400));
     }
    res.status(500).json(error.errorHandler("saveError", 500));

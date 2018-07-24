@@ -47,7 +47,7 @@ exports.likeMessage = function(req, res, next){
 }
 
 exports.getMessageLikes = function(req, res, next){
-  var currentUser = jwt.decode(req.headers.authorization.split(" ")[1]);
+  var currentUser = req.headers.authorization && jwt.decode(req.headers.authorization.split(" ")[1]);
   db.Message.findById(req.params.mid)
   .populate("likedBy", {username: true, profileImgUrl: true, followers: true, profileColor: true})
   .then(function(messages){
@@ -133,7 +133,7 @@ TODO: Separate into own file
 
 const combineData = (users, currentUser) => {
   let finalData = users.map(function(obj){
-      mappedFollowing = obj.followers.some(e => e.toString() === currentUser.userId);
+      let mappedFollowing = currentUser && obj.followers.some(e => e.toString() === currentUser.userId);
       let finalObject = {
         username: obj.username,
         profileImgUrl: obj.profileImgUrl,

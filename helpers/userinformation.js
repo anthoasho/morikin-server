@@ -2,7 +2,7 @@ var db = require("../models"),
     jwt = require("jsonwebtoken"),
         error = require("./errorHandler");
 exports.getUserMessages = function(req, res){
-  var currentUser = jwt.decode(req.headers.authorization.split(" ")[1]);
+  var currentUser =  req.headers.authorization && jwt.decode(req.headers.authorization.split(" ")[1]);
   db.User.findOne({username: req.params.id}).then(function(user){
     var perPage = 10;
     var pageId = req.query["from"]
@@ -21,7 +21,7 @@ exports.getUserMessages = function(req, res){
     .then(function(messages){
                db.Message.find({userId: user._id, isDeleted: false}).sort({createdAt: 1}).limit(1).then(last => {
       let mappedData = messages.map(function(obj){
-        mappedLiked = obj.likedBy.some(e => e.toString() === currentUser.userId) //Returns a true if the message has been liked by the user
+        let mappedLiked = currentUser ?  obj.likedBy.some(e => e.toString() === currentUser.userId) : null //Returns a true if the message has been liked by the user
         let finalData = {
           ...obj._doc,
           isLiked: mappedLiked,
@@ -44,7 +44,7 @@ exports.getUserMessages = function(req, res){
 
 const combineData = (users, currentUser) => {
   let finalData = users.map(function(obj){
-      mappedFollowing = obj.followers.some(e => e.toString() === currentUser.userId);
+      mappedFollowing =  currentUser ? obj.followers.some(e => e.toString() === currentUser.userId) : null;
       let finalObject = {
         username: obj.username,
         profileImgUrl: obj.profileImgUrl,
@@ -59,7 +59,7 @@ const combineData = (users, currentUser) => {
 
 
 exports.getUserFollow = function(req, res, next){
-  var currentUser = jwt.decode(req.headers.authorization.split(" ")[1]);
+  var currentUser = req.headers.authorization && jwt.decode(req.headers.authorization.split(" ")[1]);
   if(req.params.follow === "followers"){
     db.User.findOne({username: req.params.user})
     .populate(req.params.follow, {username: true, profileImgUrl: true, followers: true, profileColor: true})
@@ -114,9 +114,9 @@ exports.getUserProfile = function(req, res){
   db.User.findOne({username: req.params.id})
   .populate("messages", {isDeleted: true})
   .then(function(user){
-    var currentUser = jwt.decode(req.headers.authorization.split(" ")[1]);
+    var currentUser = req.headers.authorization && jwt.decode(req.headers.authorization.split(" ")[1]);
     const {followers, following, messages, id, username, profileImgUrl, profileColor, displayName, description} = user;
-    let followingTruthy = followers.some(e => e.toString() === currentUser.userId);
+    let followingTruthy = currentUser && followers.some(e => e.toString() === currentUser.userId);
     let followerCount = followers.length;
     let messageCount = messages.filter(message => message.isDeleted === false).length;
     db.User.find({followers: id}).then(following => {
