@@ -11,19 +11,24 @@ var express   =   require("express"),
     messagesRoutes  = require("./routes/messages"),
     userInfoRoutes = require("./routes/userinformation"),
     otherRoutes = ("./routes/routes");
+// app.use(function(req, res, next) {
+//   res.header("Access-Control-Allow-Origin", "*");
+//   res.header("Access-Control-Allow-Headers", "Origin, X-Requested-With, Content-Type, Accept");
+//   next();
+// });
 app.use(cors());
+app.options('*', cors());
 app.use(bodyParser.json());
 app.use(bodyParser.urlencoded({extended: true}));
 process.on('unhandledRejection', function(reason, promise) {
     console.log(promise);
 });
 app.get("/", function(req, res){
-  res.json({message:"Make a post request to sign up!"});
+  res.json({message:"Please connect through an approved method"});
 });
-
 app.use("/api/users/:id/messages", auth.loginRequired, auth.ensureCorrectUser, messagesRoutes);
 app.use("/api/auth", authRoutes);
-app.use("/api/user", auth.loginRequired, userInfoRoutes);
+app.use("/api/user", userInfoRoutes);
 app.post("/api/:username/follow", helpers.followUser);
 app.use("/api/messages/:mid/like", helpers.likeMessage);
 app.get("/api/messages/", helpers.getGetAllMessages);
