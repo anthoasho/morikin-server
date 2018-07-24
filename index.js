@@ -21,7 +21,11 @@ process.on('unhandledRejection', function(reason, promise) {
 app.get("/", function(req, res){
   res.json({message:"Please connect through an approved method"});
 });
-
+app.use(function(req, res, next) {
+  res.header("Access-Control-Allow-Origin", "*");
+  res.header("Access-Control-Allow-Headers", "Origin, X-Requested-With, Content-Type, Accept");
+  next();
+});
 app.use("/api/users/:id/messages", auth.loginRequired, auth.ensureCorrectUser, messagesRoutes);
 app.use("/api/auth", authRoutes);
 app.use("/api/user", userInfoRoutes);
