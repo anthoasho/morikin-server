@@ -1,6 +1,6 @@
 {
   "name": "Morikin",
-  "version": "0.2.5",
+  "version": "0.2.6",
   "description": "A simple Social Messaging service",
   "main": "index.js",
   "scripts": {
