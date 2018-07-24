@@ -34,7 +34,7 @@ app.use("/api/messages/:mid/like", helpers.likeMessage);
 app.get("/api/messages/", helpers.getGetAllMessages);
 app.get("/api/message/:mid/likes", helpers.getMessageLikes);
 app.get("/api/discover/users", helpers.getDiscoverUsers);
-const PORT = process.env.PORT || 8080;
+const PORT = process.env.PORT;
 app.listen(PORT, function(){
   console.log(`Server is listening on port ${PORT}`);
 });
