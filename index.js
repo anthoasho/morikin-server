@@ -16,8 +16,8 @@ var express   =   require("express"),
       res.header("Access-Control-Allow-Headers", "Origin, X-Requested-With, Content-Type, Accept");
       next();
     });
-app.use(cors());
-app.options('*', cors());
+// app.use(cors());
+// app.options('*', cors());
 app.use(bodyParser.json());
 app.use(bodyParser.urlencoded({extended: true}));
 process.on('unhandledRejection', function(reason, promise) {
