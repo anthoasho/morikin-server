@@ -12,6 +12,7 @@ var express   =   require("express"),
     userInfoRoutes = require("./routes/userinformation"),
     otherRoutes = ("./routes/routes");
 app.use(cors());
+app.options('*', cors());
 app.use(bodyParser.json());
 app.use(bodyParser.urlencoded({extended: true}));
 process.on('unhandledRejection', function(reason, promise) {
