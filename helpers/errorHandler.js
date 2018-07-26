@@ -20,7 +20,7 @@ exports.errorHandler = (type, code) => {
     case "emptyInput":
       return errorObject(code, "Please input the required fields!", "User has not completed the correct fields")
     case "userConflict":
-      return errorObject(code, "Sorry that username/email is already taken!", "Duplicate data found, unable to process")
+      return errorObject(code, "Sorry that username is already taken!", "Duplicate data found, unable to process")
     case "emptyUser":
       return errorObject(code, "You don't seem to have an account here!", "Unable to find username on the server")
     case "messageOverload":

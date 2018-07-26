@@ -31,6 +31,7 @@ exports.signin = function(req, res){
             profileImgUrl: user.profileImgUrl,
             displayName: user.displayName,
             profileColor: user.profileColor,
+            description: user.description,
             token
           });
       }else{
