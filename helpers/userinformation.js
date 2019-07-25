@@ -141,4 +141,26 @@ exports.getUserProfile = function(req, res){
       res.json(err)
   });
 };
+exports.followUser = function(req, res, next){
+  var currentUser = jwt.decode(req.headers.authorization.split(" ")[1]);
+  db.User.findOne({username: req.params.username})
+  .then(function(user){
+    var index = user.followers.indexOf(currentUser.userId);
+    if(index === -1){
+      user.followers.push(currentUser.userId);
+      user.save().then(function(user){
+        res.json({following: true, followerCount: user.followers.length, username:user.username});
+      })
+      .catch(res => res.status(500).json(error.errorHandler("saveError", 500))); //this is literally disgusting...
+    }else{
+      user.followers.splice(index, 1);
+      user.save().then(function(user){
+        res.json({following: false, followerCount: user.followers.length, username:user.username});
+      })
+      .catch(res => res.status(500).json(error.errorHandler("saveError", 500)));
+    }
+  })
+  .catch(res => res.status(500).json(error.errorHandler(404)));
+};
+
 module.exports = exports;
