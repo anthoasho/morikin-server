@@ -1,4 +1,4 @@
-require("dotenv").load()
+//require("dotenv").load()
 var jwt = require("jsonwebtoken");
 
 exports.loginRequired = function(req,res,next){
@@ -28,6 +28,6 @@ exports.ensureCorrectUser = function(req, res, next){
     });
   }catch(e){
     res.status(401).json({message:"You don't have permission!"});
-  
+
   }
 };
