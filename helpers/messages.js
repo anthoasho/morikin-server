@@ -1,7 +1,7 @@
 var db = require("../models"),
     jwt = require("jsonwebtoken"),
     error = require("./errorHandler"),
-    help = require("./sideFunctions");
+    help = require("./sideFunctions")
 
 exports.createMessage = function(req, res, next){
 
@@ -66,8 +66,15 @@ exports.getMessageLikes = function(req, res, next){
   db.Message.findById(req.params.mid)
   .populate("likedBy", {username: true, profileImgUrl: true, followers: true, profileColor: true})
   .then(function(messages){
-    let newData = combineData(messages.likedBy, currentUser)
-    res.json(newData);
+    if(!req.headers.authorization){
+      res.json(messages.likedBy)
+      next()
+    }
+    else{
+      let newData = help.combineData(messages.likedBy, currentUser)
+      res.json(newData);
+    }
+
   })
   .catch(() => {
     res.status(500).json(error.errorHandler());
