@@ -6,6 +6,10 @@ var express = require("express"),
 // - Get AllMessages
 router.get("/", helpers.getAllMessages);
 
+
+// - Get Messages without login
+router.get("/allMessages", helpers.noLoginGetMessages);
+
 // - Get Message likes
 router.get("/:mid/likes", helpers.getMessageLikes);
 

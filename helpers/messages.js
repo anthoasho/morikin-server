@@ -1,6 +1,7 @@
 var db = require("../models"),
     jwt = require("jsonwebtoken"),
-    error = require("./errorHandler");
+    error = require("./errorHandler"),
+    help = require("./sideFunctions");
 
 exports.createMessage = function(req, res, next){
 
@@ -114,33 +115,36 @@ exports.getAllMessages = function(req, res){
 
 }
 
+exports.noLoginGetMessages = function(req,res) {
+  var perPage = 10;
+  var pageId = req.query["from"];
+  let query = pageId ? {'_id': {'$lt':pageId}, isDeleted: false}: {isDeleted: false}
 
-const combineData = (users, currentUser) => {
-  let finalData = users.map(function(obj){
-      let mappedFollowing = currentUser && obj.followers.some(e => e.toString() === currentUser.userId);
-      let finalObject = {
-        username: obj.username,
-        profileImgUrl: obj.profileImgUrl,
-        following: mappedFollowing,
-        profileColor: obj.profileColor,
-        displayName: obj.displayName
-      }
-    return finalObject;
-  });
-  return finalData;
-}
+  db.Message.find(query)
+  .limit(perPage)
+  .sort({createdAt:"desc"})
+  .populate("userId", {username: true, profileImgUrl: true, profileColor: true, displayName:true})
+    .then(function(messages){
+        db.Message.find({isDeleted:false}).sort({createdAt: 1}).limit(1).then(last => {
+          let newData = messages.map(function(obj){
+            let finalData = {
+              ...obj._doc,
+              likedBy: obj.likedBy.length,
+              isLast: obj._id.toString() === last[0]._id.toString() //Figure out something to do with this isLast - how to handle it
+            }
+            return finalData;
+          })
+          res.json(newData);
 
-function dataShuffle(array){
-  let lastNum = array.length;
-  let i;
-  let swapper;
-  while(lastNum){
-    i = Math.floor(Math.random() * lastNum-- );
-    swapper = array[lastNum];
-    array[lastNum] = array[i];
-    array[i] = swapper
-  }
-  return array
+        })
+    })
+    .catch(function(err){
+        res.status(404).json(error.errorHandler("messageNoFind", 404));
+    })
+    .catch(function(err){
+    res.status(500).json(error.errorHandler("messageNoFind", 500));
+    });
+
 }
 
 module.exports = exports;
